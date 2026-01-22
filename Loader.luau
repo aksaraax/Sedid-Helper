@@ -110,29 +110,50 @@ local KeyAuth = {
 }
 
 function KeyAuth:Init(): (boolean, string)
-	local params = {
+	local body = encodeParams({
 		type = "init",
 		ver = CONFIG.Version,
 		name = CONFIG.Name,
 		ownerid = CONFIG.OwnerID,
-	}
-	
-	local response = httpRequest({
-		Url = "https://keyauth.win/api/1.2/?" .. encodeParams(params),
-		Method = "GET",
 	})
 	
-	if response and response.Body then
-		local success, data = pcall(function(): KeyAuthResponse
+	local requestFunc: any = nil
+	pcall(function()
+		if (syn :: any) and (syn :: any).request then
+			requestFunc = (syn :: any).request
+		elseif (http :: any) and (http :: any).request then
+			requestFunc = (http :: any).request
+		elseif (http_request :: any) then
+			requestFunc = http_request :: any
+		elseif (request :: any) then
+			requestFunc = request :: any
+		end
+	end)
+	
+	if not requestFunc then
+		return false, "No HTTP function"
+	end
+	
+	local success, response = pcall(requestFunc, {
+		Url = "https://keyauth.win/api/1.2/",
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/x-www-form-urlencoded",
+		},
+		Body = body,
+	})
+	
+	if success and response and response.Body then
+		local decodeSuccess, data = pcall(function()
 			return HttpService:JSONDecode(response.Body)
 		end)
 		
-		if success and data.success then
+		if decodeSuccess and data.success then
 			self.sessionId = data.sessionid
 			self.initialized = true
 			return true, "Initialized"
 		else
-			return false, data.message or "Init failed"
+			return false, (data and data.message) or "Init failed"
 		end
 	end
 	
@@ -147,29 +168,50 @@ function KeyAuth:License(key: string): (boolean, string)
 		end
 	end
 	
-	local params = {
+	local body = encodeParams({
 		type = "license",
 		key = key,
 		hwid = self.hwid,
 		sessionid = self.sessionId or "",
 		name = CONFIG.Name,
 		ownerid = CONFIG.OwnerID,
-	}
-	
-	local response = httpRequest({
-		Url = "https://keyauth.win/api/1.2/?" .. encodeParams(params),
-		Method = "GET",
 	})
 	
-	if response and response.Body then
-		local success, data = pcall(function(): KeyAuthResponse
+	local requestFunc: any = nil
+	pcall(function()
+		if (syn :: any) and (syn :: any).request then
+			requestFunc = (syn :: any).request
+		elseif (http :: any) and (http :: any).request then
+			requestFunc = (http :: any).request
+		elseif (http_request :: any) then
+			requestFunc = http_request :: any
+		elseif (request :: any) then
+			requestFunc = request :: any
+		end
+	end)
+	
+	if not requestFunc then
+		return false, "No HTTP function"
+	end
+	
+	local success, response = pcall(requestFunc, {
+		Url = "https://keyauth.win/api/1.2/",
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/x-www-form-urlencoded",
+		},
+		Body = body,
+	})
+	
+	if success and response and response.Body then
+		local decodeSuccess, data = pcall(function()
 			return HttpService:JSONDecode(response.Body)
 		end)
 		
-		if success and data.success then
+		if decodeSuccess and data.success then
 			return true, "Licensed"
 		else
-			return false, data.message or "License failed"
+			return false, (data and data.message) or "License failed"
 		end
 	end
 	
